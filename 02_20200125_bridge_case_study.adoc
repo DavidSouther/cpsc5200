@@ -1,0 +1,207 @@
+= Bridge Pattern Case Study
+
+David Souther <dsouther@seattleu.edu>
+2020-01-25 Bridge Case Study
+
+The Gang-of-Four "Bridge" pattern is one of the GOF patterns that still finds usage and value today.
+It's relatively easy to point at examples that you can squint at and say "sure that's a bridge pattern".
+I present this case study as a motivating example of looking at a problem arising in a real code base.
+This is choosing a technique inspired by GoF and other design patterns texts, and applying the pattern to simplify some areas of the codebase (yes, at the expense of complexity in others).
+
+== v1
+
+In this section of the application, we are taking input from a REST request, repackaging the fields, and brokering the request further.
+(Yes, that in itself is a design patter, but not the one we're interested in today!)
+The application must choose between one of two versions of the backend API, based on a flag that is set at process start up.
+This code is in Java, because Java's lack of a notion of Callable makes it a bit more complex than a language with first-class lambdas.
+(Yes, I know modern Java has lambdas, but again, that would distract from that pattern.)
+
+.RpcHandler.java
+[source, java]
+----
+class RpcHandler {
+    @Inject BackendServiceBeta betaBackend;
+    @Inject BackendServiceV1 v1Backend;
+
+    public Future<{}> run(OperationRequest request) {
+        String resourceId = request.getId();
+        Resource resource = request.getResourceInfo();
+
+        bool shouldCallBeta = ApiVersion.BETA.flag;
+
+        return shouldCallBeta ?
+            betaBackend.callRPC() :
+            v1Backend.callRPC();
+    }
+}
+
+class RpcHandlerTest {
+    @Inject BackendServiceBeta betaBackend;
+    @Inject BackendServiceV1 v1Backend;
+
+    @Inject RpcHandler handler;
+
+    public void rpcHandlerTest_testCallBeta() {
+        ApiVersion.BETA.flag = true;
+
+        handler.run(OperationRequest.for(fakeResource));
+
+        verify(betaBackend).callRPC(resource);
+    }
+
+    public void rpcHandlerTest_testCallV1() {
+        ApiVersion.BETA.flag = false;
+
+        handler.run(OperationRequest.for(fakeResource));
+
+        verify(v1Backend).callRPC(resource);
+    }
+}
+----
+
+This code looks straight forward. 
+It does what it says it does.
+It does what it needs to do.
+During code review, concerns were raised.
+A code reviewer pointed out that, in either test, a failure would not occur if the unintended back end were called.
+Is that a legitimate concern?
+
+Methodologically, if I have a code structure `+if A then do X else do Y+`, it is reasonable to test `+A -> do X+` and `+!A -> do Y+`.
+Should the tests also cover `+A -> not do Y+` and `+!A -> not do X+`, that is, additionally test that the effects of Y have not occurred when A is true (and vice versa)?
+Both "Yes" and "No" are defensible answers.
+It really depends - what is the scope of the work?
+What are the consequences of Y happening when A is true?
+But at the end of the day, the spec says "X will happen when A is true, and Y will happen otherwise".
+The tests should assert the contract was obeyed, and this contract implies one and only one backend will be called.
+Therefor, this should be tested.
+
+The easy modification adds a single line to both tests.
+`+verify(v1Backend, never()).callRPC(any())+` in the first test and `+verify(betaBackend, never()).callRPC(any())+` in the second.
+This will resolve the reviewer's concerns.
+
+== General Backend Bridge
+
+For this use case, the `+never()+` assertions are sufficient to continue.
+However, if there was reasonable expectation this marshal were going to grow to include multiple backends over the lifetime of the app, we could refactor to a bridge pattern.
+The notion of this refactoring is to take each side of the branch and extract it to its own class or singleton object.
+Then, we introduce a method which chooses which of these implementations to use.
+This method is the **bridge**.
+Finally, the handler will dispatch to the instance returned by the bridge.
+Each of the implementations can be tested trivially, the bridge can be tested directly, and the handler tests are unchanged.
+
+.BridgedRpcHandler.java
+[source, java]
+----
+class BridgedRpcHandler {
+    @Inject BackendServiceBeta betaBackend;
+    @Inject BackendServiceV1 v1Backend;
+
+    public Future<{}> run(OperationRequest request) {
+        String resourceId = request.getId();
+        Resource resource = request.getResourceInfo();
+
+        this.bridgeBackend().callRPC(resource);
+    }
+
+    class BetaBackendBridge implements BridgeBackend {
+        Future<{}> callRPC(Resource resource) {
+            BridgedRpcHandler.this.betaBackend.callRPC(resource);
+        }
+    }
+ 
+    class V1BackendBridge implements BridgeBackend {
+        Future<{}> callRPC(Resource resource) {
+            BridgedRpcHandler.this.v1Backend.callRPC(resource);
+        }
+    }
+
+    BridgeBackend bridgeBackend() {
+        bool shouldCallBeta = ApiVersion.BETA.flag;
+        return shouldCallBeta ?
+            new BetaBackendBridge() :
+            new V1BackendBridge();
+    }
+}
+
+interface BridgeBackend {
+    Future<{}> runRPC(Resource resource);
+}
+
+class RpcHandlerTest {
+    @Inject BackendServiceBeta betaBackend;
+    @Inject BackendServiceV1 v1Backend;
+
+    @Inject RpcHandler handler;
+
+    public void rpcHandlerTest_testCallBeta() {
+        ApiVersion.BETA.flag = true;
+
+        handler.run(OperationRequest.for(fakeResource));
+
+        verify(betaBackend).callRPC(any());
+        verify(v1Backend, never()).callRPC(any());
+    }
+
+    public void rpcHandlerTest_testCallV1() {
+        ApiVersion.BETA.flag = false;
+
+        handler.run(OperationRequest.for(fakeResource));
+
+        verify(v1Backend).callRPC(any());
+        verify(betaBackend, never()).callRPC(any());
+    }
+}
+----
+
+What does this buy the team?
+Short term, not much.
+It's a lot of overhead for what looks a trivial problem.
+In this case, it is - the never() mocks provide the test coverage the project needs to move forward safely, and the overhead is high for someone coming along later.
+In a different project, this pattern would be a boon.
+Here, there's a simple boolean flag for "Have we rolled to production yet", and will (probably) be removed in \~4 weeks when the launch is completed.
+In other applications, choosing backends for the same operation is a much more complex prospect.
+There are multiple production environments, in zones and regions spanning the globe.
+Choosing between them is not a simple flag, but can be based on myriad realtime checks and metrics.
+In that product, testing all of the growing `+not do Y+` cases is untenable for each branch.
+This refactoring would become a critical effort to allow that product to grow and meet its requirements. 
+
+== Typescript
+
+This specific example of this pattern is even easier to express in Typescript, due to the language's _structural typing_.
+In the Java example, V1Backend and BetaBackend have one member in common, `+runRPC(Resource)+`.
+However, they do not implement a common interface, so we need to define our own BridgeBackend and implementations that dispatch to the injected backend implentations proper.
+In Typescript, this is much simpler & correspondingly a lower "overhead" pattern.
+In fact, in my opinion, it's so simple there's almost no reason not to use this approach, even in the trivial case of a short-term API rollout.
+
+.RpcHandler.ts
+[source, typescript]
+----
+interface Backend {
+    runRPC(resource: Resource);
+}
+
+class RpcHandler {
+    @Inject(BetaBackend) betaBackend: Backend;
+    @Inject(V1Backend) v1Backend: Backend;
+
+    run(OperationRequest request): Promise<{}> {
+        const resourceId = request.id;
+        const resource = request.resourceInfo;
+
+        this.bridgeBackend().callRPC(resource);
+    }
+
+    bridgeBackend(): Backend {
+        const shouldCallBeta = ApiVersion.BETA.flag;
+        return shouldCallBeta ?
+            this.betaBackend :
+            this.v1Backend;
+    }
+}
+----
+
+In this case study, we examined one example motivated by a recent comment in code review of a current global cloud product.
+With multiple ways to approach the comment's concerns, the team is left evaluating a number of criteria for which approach to pursue.
+These criteria are based on tactical and strategic product planning, ease of use of the programming language, and personal style preferences of the team members involved.
+Design patterns are a set of tools of varying quality, utility, and appropriateness.
+Patterns are not panacea.
