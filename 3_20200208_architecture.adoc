@@ -1,0 +1,56 @@
+
+= Architecture
+
+David Souther <dsouther@seattleu.edu>
+2020-02-04 Architecture Styles & Patterns
+
+An architect is the "first builder".
+In adopting this nomenclature from our physical building colleagues, software engineers have a wealth of inspiration to draw from.
+We also get a few connotations we may not have wanted.
+But this paper is an opinion piece on the good parts.
+I find it edifying to explore whether a software professional considers themselves an engineer, a craftsman, or a scientist.
+Each has valuable skillsets for the others, but I find that most can be solidly put in one of these three burgeoning traditions.
+
+Taking the moniker "architect" from our ancient Greek forbearers seeds us with language to discuss the craftsmanship approach.
+The "styles" are well established in antiquity - Doric, Ionic, and Corinthian.
+Each of these styles adds flourish (or a pointed lack thereof) on the basic shapes that make buildings work - circles, rectangles and triangles.
+These primitives, like the nand gates of today's CPUs, are dictated by physics.
+They are also flexible enough to be arranged to meet the specific needs of the humans who interact with the artifacts they create.
+
+In the Adriatic Greek world, a rectangular floor plan with open central corridor fits the climate excellently.
+The central courtyard, with garden and pond, creates a natural evaporative center to draw cool air through the complex.
+This basic structure works so well, it was replicated in mediterranean climates until the introduction of central HVAC in the 20th century.
+Throughout that time, shifting social structures changed the layout and purpose of rooms throughout the rectangular building.
+
+Each of these elements - columns, central courtyard, kitchen & chimney - can be isolated and replicated.
+*An architectural style is an identifiable design motif, decision, or isolated element.*
+None of them solve a particular problem on their own, but they are general tools for the architect.
+
+As the first craftsman, an architect is responsible for ensuring the resulting deliverable (building, car, program) meets the needs of the people who will use it.
+This role requires vision (what do we need to build), empathy (does what we're building meet someone else' needs), attention to detail (did we build it the right way), and much more.
+That breadth of knowledge is difficult to apply in any single person, on any single project, at any scale of interest.
+To make this feasible, the architect needs to create abstractions of the details of the work.
+
+When the same problems and approaches have been abstracted successfully the same way repeatedly, the body of knowledge begins to call these patterns.
+*An architectural pattern is a collection of styles that are commonly grouped together to solve a specific problem.*
+When the patterns become so ingrained in the zeitgeist of the profession, they become idioms.
+As they become more formalized, they also begin to ossify - this is good.
+This means that they can come off-the-shelf to meet the needs of the project (provided the architect grabs the right tool for the right problem).
+
+At that point, a competent architect will begin building new patterns for their domain.
+In the software world, we could choose one of many fundamental building blocks.
+The normalized forms for relational databases are, individually, styles of data layout.
+Taken as a whole, they become a pattern for effectively storing relational data.
+Some patterns are so critical to the functioning of software systems, entire companies are built around providing a single product for the pattern.
+Or many companies - just look at the number of identity and authorization subsystems!
+
+Understanding, reaching for, and using these building blocks lets a good architect focus the team's efforts on building the novel aspect of the product.
+Architects know these patterns work because they have worked for other projects.
+They have been put together in 90% the same way, thousands of times.
+Our value to the team and the organization lies in our ability to effectively convey _why_ we are using these patterns, and ensuring their application meets the known good ways to apply them.
+
+A team without an architect will use some of these patterns, intentionally or accidentally.
+They will correctly apply some of them, whether through intuition or luck.
+But they will likely apply some incorrectly.
+And then they'll build a Greek villa, and instead of putting the garden in the middle and the kitchen on the far back, they'll put the kitchen in the middle and the garden to the side.
+And no one will like this house, because it stinks all day and is hot all night, and no one wants to walk though the larder to get to the garden.
