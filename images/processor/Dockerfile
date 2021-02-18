@@ -4,9 +4,7 @@ WORKDIR /app
 
 COPY . .
 
+RUN apk add imagemagick
 RUN pip3 install -r requirements.txt
 
-ENV FLASK_APP "api.py"
-EXPOSE 5000
-
-CMD [ "flask", "run", "--host", "0.0.0.0" ]
+CMD [ "python", "app.py" ]

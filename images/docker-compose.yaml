@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+  bus:
+    image: rabbitmq:3-management
+    hostname: bus 
+    volumes:
+      - ./bus/data:/var/lib/rabbitmq/mnesia/rabbit@my-rabbit
+      - ./bus/logs:/var/log/rabbitmq/log
+    ports:
+      - 15672:15672
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 3 
+  processor:
+    build:
+      context: ./processor
+      dockerfile: Dockerfile
+    volumes:
+        - ./processor:/app
+    depends_on:
+      - bus
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    depends_on:
+      - bus
+    volumes:
+        - ./api:/app
+    ports:
+      - 5000:5000
