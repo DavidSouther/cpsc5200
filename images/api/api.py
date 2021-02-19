@@ -4,7 +4,8 @@ import argparse
 import logging
 import pika
 
-from flask import Flask, jsonify, g
+from pathlib import Path
+from flask import Flask, jsonify, g, request
 
 app = Flask(__name__)
 
@@ -12,7 +13,10 @@ logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', level=loggin
 parser = argparse.ArgumentParser()
 parser.add_argument('--bus', type=str, default='bus')
 parser.add_argument('--queue', type=str, default='images')
+parser.add_argument('--nas', type=str, default='/nas')
 (args, _) = parser.parse_known_args()
+
+NAS = Path(args.nas)
 
 def channel():
     if 'channel' not in g:
@@ -24,6 +28,24 @@ def channel():
         logging.debug('Opened channel on %s', args.bus)
     logging.debug('Using channel on %s', args.bus)
     return g.channel
+
+ID = 1
+def next_id():
+    global ID
+    id = ID
+    ID += 1
+    return str(id)
+
+@app.route('/photo', methods=['POST'])
+def upload():
+    id = next_id()
+    folder = NAS / 'photos' / id
+    file = folder / 'first.png'
+    logging.info('Writing file to %s', folder)
+    folder.mkdir(parents=True, exist_ok = True)
+    request.files['file'].save(file)
+    (folder/'current.png').symlink_to(file)
+    return f'/photo/{id}'
 
 @app.route('/photo/<id>/transform')
 def transform(id):

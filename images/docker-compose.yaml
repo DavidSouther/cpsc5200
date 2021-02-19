@@ -20,6 +20,7 @@ services:
       dockerfile: Dockerfile
     volumes:
         - ./processor:/app
+        - ./nas:/nas
     depends_on:
       - bus
   api:
@@ -30,5 +31,6 @@ services:
       - bus
     volumes:
         - ./api:/app
+        - ./nas:/nas
     ports:
       - 5000:5000
