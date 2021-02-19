@@ -47,7 +47,7 @@ def upload():
     (folder/'current.png').symlink_to(file)
     return f'/photo/{id}'
 
-@app.route('/photo/<id>/transform')
+@app.route('/photo/<id>:transform', methods=['POST'])
 def transform(id):
     message = f'Transforming {id}'
     logging.info(message)
