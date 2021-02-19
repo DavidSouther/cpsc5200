@@ -7,6 +7,8 @@ import pika
 from pathlib import Path
 from flask import Flask, jsonify, g, request
 
+import db
+
 app = Flask(__name__)
 
 logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', level=logging.DEBUG, datefmt='%H:%M:%S')
@@ -29,22 +31,28 @@ def channel():
     logging.debug('Using channel on %s', args.bus)
     return g.channel
 
-ID = 1
-def next_id():
-    global ID
-    id = ID
-    ID += 1
-    return str(id)
+@app.before_first_request
+def connect():
+    db.migrate()
+
+def next_id(device):
+    photo = db.Photo(device=device)
+    db.session().add(photo)
+    db.session().commit()
+    return str(photo.id)
+
+def write(id, upload):
+    folder = NAS / 'photos' / id
+    filepath = folder / 'first.png'
+    logging.info('Writing file to %s', folder)
+    folder.mkdir(parents=True, exist_ok = True)
+    upload.save(filepath)
+    (folder/'current.png').symlink_to(filepath)
 
 @app.route('/photo', methods=['POST'])
 def upload():
-    id = next_id()
-    folder = NAS / 'photos' / id
-    file = folder / 'first.png'
-    logging.info('Writing file to %s', folder)
-    folder.mkdir(parents=True, exist_ok = True)
-    request.files['file'].save(file)
-    (folder/'current.png').symlink_to(file)
+    id = next_id(request.form['device'])
+    write(id, request.files['file'])
     return f'/photo/{id}'
 
 @app.route('/photo/<id>:transform', methods=['POST'])

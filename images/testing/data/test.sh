@@ -7,13 +7,11 @@ echo "Reading test data from $ROOT"
 
 for D in ${DIRS[@]} ; do (
     set -x
-    D="$ROOT/$D"
     sleep $(python -c "import random; print(random.random())")
-
-    ID=$(curl -F "file=@${D}/image.png" http://localhost:5000/photo 2>/dev/null)
+    ID=$(curl -F "device=${D}" -F "file=@${ROOT}/${D}/image.png" http://localhost:5000/photo 2>/dev/null)
     curl --header "Content-Type: application/json" \
         --request POST \
-        --data "@${D}/convert.json" \
+        --data "@${ROOT}/${D}/convert.json" \
         http://localhost:5000${ID}:transform
 ) &
 done
