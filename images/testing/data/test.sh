@@ -12,7 +12,7 @@ for D in ${DIRS[@]} ; do (
     curl --header "Content-Type: application/json" \
         --request POST \
         --data "@${ROOT}/${D}/convert.json" \
-        http://localhost:5000/photos/${ID}:transform
+        http://localhost:5000${ID}:transform
 ) &
 done
 
