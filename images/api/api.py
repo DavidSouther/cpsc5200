@@ -4,8 +4,8 @@ import logging
 from flask import request
 
 from app import app
+from common import db
 import bus
-import db
 import photos
 
 logging.basicConfig(level=logging.INFO)

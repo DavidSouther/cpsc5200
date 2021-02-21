@@ -14,32 +14,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3 
-  processor_a:
+  converter_a:
     build:
-      context: ./processor
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./converter/Dockerfile
     volumes:
-        - ./processor:/app
-        - ./nas:/nas
-    depends_on:
-      - bus
-  processor_b:
-    build:
-      context: ./processor
-      dockerfile: Dockerfile
-    volumes:
-        - ./processor:/app
+        - ./converter:/app
+        - ./common:/app/common
         - ./nas:/nas
     depends_on:
       - bus
   api:
     build:
-      context: ./api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./api/Dockerfile
     depends_on:
       - bus
     volumes:
         - ./api:/app
+        - ./common:/app/common
         - ./nas:/nas
         - ./db:/var/db
     ports:

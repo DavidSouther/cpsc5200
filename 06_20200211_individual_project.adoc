@@ -15,17 +15,20 @@ The results of the photo transforms will be available for usage eg in an ML/Imag
 === Components
 
 * Camera devices - C or other proprietary API. Will be provided with a configuration including API server, necessary network information, frequency of photos, and calibration for what edit commands to dispatch.
-* API Server - Haskell or other high performance / low overhead web server. Implements the HTTP interface below, and monitors a message queue to track which operations have been completed. Also periodically runs batch clean, removing completed but unused operation images older than "30" days.
+* API Server - Haskell or other high performance / low overhead web server. Implements the HTTP interface below, and monitors a message queue to track which operations have been completed.
+* Processor - Haskell or similar. Coordinates image converters running in appropriate workflow order.
+* Janitor - Periodically runs batch clean, removing completed but unused operation images older than "30" days.
 * Metadata Store - SQL database. See schema below.
 * File Store - high-volume NAS store, available to API & Image processors.
-* Image Processors - Python (or shell) wrapper around image magic, to perform the processing of images stored on the NAS.
+* Image converters - Python (or shell) wrapper around image magic, to perform the processing of images stored on the NAS.
 
 === Connectors
 
 * Devices to API: HTTP, see details below.
 * API to Metadata: SQL Connector du Jour.
 * API to File: NAS Filesystem.
-* API to Image Processors: Rabbit MQ or similar.
+* API to Processor: Rabbit MQ or similar.
+* Processor to Converters: Rabbit MQ.
 * Image to File: NAS Filesystem.
 
 == Communication

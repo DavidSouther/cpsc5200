@@ -1,7 +1,7 @@
 import argparse
 import logging
 from pathlib import Path
-import db
+from common import db
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--nas', type=str, default='/nas')

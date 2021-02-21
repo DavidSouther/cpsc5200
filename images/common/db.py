@@ -16,7 +16,7 @@ def engine():
     global _engine
     if _engine is None:
         logging.info('Loading database at %s', args.database)
-        _engine = create_engine(args.database, echo=True)
+        _engine = create_engine(args.database)
     return _engine
 
 def session():
