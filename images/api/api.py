@@ -1,12 +1,14 @@
 
 import logging
 
-from flask import jsonify, g, request
+from flask import request
 
 from app import app
 import bus
 import db
 import photos
+
+logging.basicConfig(level=logging.INFO)
 
 @app.before_first_request
 def connect():
@@ -27,10 +29,21 @@ def upload():
 
 @app.route('/photos/<int:id>:transform', methods=['POST'])
 def transform(id):
-    message = f'Transforming {id}'
-    logging.info(message)
-    bus.publish(message)
-    return jsonify([5])
+    logging.info('Transforming %s', id)
+    photo = db.session().query(db.Photo).filter(db.Photo.id == id).first()
+    ops = request.stream.readlines()
+    results = []
+    last_op = 'current'
+    for op in ops:
+        op = op.decode('utf-8').strip()
+        logging.info('Sending operation on %s: %s', photo.id, op)
+        operation = photos.next_operation(photo, last_op, op)
+        message = f'{photo.id} {operation.id} {last_op} {op}'
+        last_op = operation.id
+        logging.info('Publishing %s', message)
+        bus.publish(message)
+        results.append(f'/photos/{photo.id}/steps/{operation.id}')
+    return '\n'.join(results)
 
 if __name__ == '__main__':
     connect()

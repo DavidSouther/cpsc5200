@@ -9,10 +9,7 @@ for D in ${DIRS[@]} ; do (
     set -x
     sleep $(python -c "import random; print(random.random())")
     ID=$(curl -F "device=${D}" -F "file=@${ROOT}/${D}/image.png" http://localhost:5000/photos 2>/dev/null)
-    curl --header "Content-Type: application/json" \
-        --request POST \
-        --data "@${ROOT}/${D}/convert.json" \
-        http://localhost:5000${ID}:transform
+    curl --request POST  --data-binary "@${ROOT}/${D}/operations" "http://localhost:5000${ID}:transform"
 ) &
 done
 

@@ -14,6 +14,15 @@ def next_id(device):
     db.session().commit()
     return str(photo.id)
 
+def next_operation(photo, last_operation, op):
+    previous_id = None
+    if last_operation != 'current':
+        previous_id = int(last_operation)
+    operation = db.Operation(photo=photo, previous_id=previous_id, description=op)
+    db.session().add(operation)
+    db.session().commit()
+    return operation
+
 def write(id, upload):
     folder = NAS / 'photos' / id
     filepath = folder / 'first.png'

@@ -30,15 +30,19 @@ The results of the photo transforms will be available for usage eg in an ML/Imag
 
 == Communication
 
+The main API will provide a minimal resource API, with a specific RPC for executing a list of transform operations.
+Uploads will use multipart form data.
+Other RPC requests will use a simple flat POST body, with one command per line.
+
 ----
 GET /photos -> [{id}] # List of photo IDs 
 GET /device/{device}/photos -> [{id}] # List of photos limited to a single device
-POST /photos {photo} -> /photos/{id}  # Upload a photo, returns the generated ID
-GET /photos/{id} -> {photo}
-POST /photos/{id}/transform [op] -> [{opid}] # Queue a list of transformations to apply to the photo at {id}. Returns a list of {opid}s which will get filled with results.
-GET /photos/{id}/steps:first -> {photo} # Return the original, raw photo posted.
+POST /photos device={device} file={photo} -> /photos/{id}  # Upload a photo, returns the generated ID
+GET /photos/{id}.png -> {photo}
+POST /photos/{id}:transform [op] -> [{opid}] # Queue a list of transformations to apply to the photo at {id}. Returns a list of {opid}s which will get filled with results.
+GET /photos/{id}/first.png -> {photo} # Return the original, raw photo posted.
 GET /photos/{id}/steps -> [{opid}] # Returns a list of opids which are either younger than 30 days, or are in use.
-GET /photos/{id}/steps/{opid} -> {photo, metadata} # Return the photo at {opid} transform. 
+GET /photos/{id}/steps/{opid}.png -> {photo} # Return the photo at {opid} transform. 
 POST /photos/{id}/steps/{opid}:rebase -> /photos/{id} # Move the photo step at {opid} to be the current photo in {id}, for get and future operations
 ----
 
@@ -51,6 +55,17 @@ crop {left}:{top}:{width}:{height} # Crop region of photo
 resize {x?}:{y?} # One of x or y must be specified. If both, sets size to both. If only one, keeps aspect ratio.
 thumbnail # Shorthand for resize larger size to 64
 ----
+
+=== API to convert mapping
+
+---
+flip horizontal -> -flop
+flip vertical -> -flip
+rotate -> -rotate {d}
+crop l:t:w:h -> -crop {w}x{h}+{l}+{t}
+resize x?:y? -> -resize {x}x{y}
+grayscale -> -grayscale
+---
 
 == Database
 
@@ -80,12 +95,12 @@ ROOT/
       current -> {opid}.jpg
       first.png
       {opid}.png
+----
 
-Operation messages
-- id
-- opid
-- last opid
-- operation
+== Messages
+
+----
+photo_id opid last_opid operation
 ----
 
 == Backend
@@ -94,6 +109,7 @@ This unified system manages collection and normalization of IoT image collection
 Cameras at various locations in the system take pictures of the assembly line.
 These photos are uploaded to the central file system.
 The camera then uses an on-board configuration to instruct the central file system to normalize the images it generated to the appropriate constraints for recognition.
+Configurations are flat text files, with the operations listed in order, one per line.
 
 == Security & Operations
 
