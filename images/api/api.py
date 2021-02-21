@@ -49,13 +49,20 @@ def write(id, upload):
     upload.save(filepath)
     (folder/'current.png').symlink_to(filepath)
 
-@app.route('/photo', methods=['POST'])
+@app.route('/photos', methods=['GET'])
+def list():
+    photos = db.session().query(db.Photo).all()
+    return '\n'.join([f'/photo/{photo.id}' for photo in photos])
+
+@app.route('/photos', methods=['POST'])
 def upload():
-    id = next_id(request.form['device'])
+    device = request.form['device']
+    logging.info('Uploading file from %s', device)
+    id = next_id(device)
     write(id, request.files['file'])
     return f'/photo/{id}'
 
-@app.route('/photo/<id>:transform', methods=['POST'])
+@app.route('/photos/<int:id>:transform', methods=['POST'])
 def transform(id):
     message = f'Transforming {id}'
     logging.info(message)
@@ -69,4 +76,5 @@ def transform(id):
     return jsonify([5])
 
 if __name__ == '__main__':
-    app.run()
+    connect()
+    app.run(debug=True, host='0.0.0.0')

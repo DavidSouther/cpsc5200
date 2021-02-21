@@ -1,11 +1,12 @@
 from argparse import ArgumentParser
 from datetime import datetime
+import logging
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
 parser = ArgumentParser()
-parser.add_argument('--database', type=str, default='sqlite:///:memory:')
+parser.add_argument('--database', type=str, default='sqlite:////var/db/test.db')
 (args, _) = parser.parse_known_args()
 
 
@@ -15,6 +16,7 @@ _session = None
 def engine():
     global _engine
     if _engine is None:
+        logging.info('Loading database at %s', args.database)
         _engine = create_engine(args.database, echo=True)
     return _engine
 

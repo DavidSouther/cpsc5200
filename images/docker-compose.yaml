@@ -14,7 +14,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3 
-  processor:
+  processor_a:
+    build:
+      context: ./processor
+      dockerfile: Dockerfile
+    volumes:
+        - ./processor:/app
+        - ./nas:/nas
+    depends_on:
+      - bus
+  processor_b:
     build:
       context: ./processor
       dockerfile: Dockerfile
@@ -32,5 +41,6 @@ services:
     volumes:
         - ./api:/app
         - ./nas:/nas
+        - ./db:/var/db
     ports:
       - 5000:5000
