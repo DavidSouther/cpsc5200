@@ -1,9 +1,9 @@
 from argparse import ArgumentParser
-from datetime import datetime
 import logging
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime
+from flask import g
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, scoped_session
 
 parser = ArgumentParser()
 parser.add_argument('--database', type=str, default='sqlite:////var/db/test.db')
@@ -12,7 +12,6 @@ parser.add_argument('--database', type=str, default='sqlite:////var/db/test.db')
 
 Base = declarative_base()
 _engine = None
-_session = None
 def engine():
     global _engine
     if _engine is None:
@@ -21,10 +20,9 @@ def engine():
     return _engine
 
 def session():
-    global _session
-    if _session is None:
-        _session = sessionmaker(bind=engine())()
-    return _session
+    if not 'session' in g:
+        g.session = scoped_session(sessionmaker(bind=engine()))()
+    return g.session
 
 def migrate():
     global Base
