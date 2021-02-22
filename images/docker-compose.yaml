@@ -9,11 +9,6 @@ services:
       - ./bus/logs:/var/log/rabbitmq/log
     ports:
       - 15672:15672
-    healthcheck:
-      test: rabbitmq-diagnostics -q ping
-      interval: 10s
-      timeout: 5s
-      retries: 3 
 
   db:
     image: postgres:13-alpine
@@ -25,7 +20,6 @@ services:
 
   adminer:
     image: adminer
-    restart: always
     ports:
       - 8080:8080
 
@@ -37,19 +31,33 @@ services:
         - ./converter:/app
         - ./common:/app/common
         - ./nas:/nas
-    depends_on:
-      - bus
+
+  converter_b:
+    build:
+      context: .
+      dockerfile: ./converter/Dockerfile
+    volumes:
+        - ./converter:/app
+        - ./common:/app/common
+        - ./nas:/nas
+    
+  processor:
+    build:
+      context: .
+      dockerfile: ./processor/Dockerfile
+    volumes:
+      - ./processor:/app
+      - ./common:/app/common
+    ports:
+      - 5678:5678
 
   api:
     build:
       context: .
       dockerfile: ./api/Dockerfile
-    depends_on:
-      - bus
     volumes:
-        - ./api:/app
-        - ./common:/app/common
-        - ./nas:/nas
-        - ./db:/var/db
+      - ./api:/app
+      - ./common:/app/common
+      - ./nas:/nas
     ports:
       - 5000:5000

@@ -17,12 +17,14 @@ def engine():
     global _engine
     if _engine is None:
         logging.info('Loading database at %s', args.database)
-        _engine = create_engine(args.database)
+        _engine = create_engine(args.database, echo=False)
     return _engine
+
+Session = scoped_session(sessionmaker(bind=engine()))
 
 def session():
     if not 'session' in g:
-        g.session = scoped_session(sessionmaker(bind=engine()))()
+        g.session = Session()
     return g.session
 
 def migrate():

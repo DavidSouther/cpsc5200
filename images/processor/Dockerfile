@@ -12,8 +12,6 @@ RUN \
  apk --purge del .build-deps
 
 COPY ./common ./common
-COPY ./api .
+COPY ./converter .
 
-EXPOSE 5000
-
-CMD [ "python", "api.py", "--host", "0.0.0.0" ]
+CMD [ "python", "/app/processor.py" ]

@@ -3,6 +3,6 @@
 cd "$(dirname "$0")"
 rm -rf \
     ./nas/photos/* \
-    ./db/data
+    ./db/data/*
 
-mkdir ./db/data
+mkdir ./db/data 2>/dev/null

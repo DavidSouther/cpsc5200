@@ -11,6 +11,19 @@
             "program": "${workspaceFolder}/images/api/api.py",
             "args": ["--database=sqlite:///${workspaceFolder}/images/api/db/test.db", "--nas=${workspaceFolder}/images/nas"],
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: Remote Attach",
+            "type": "python",
+            "request": "attach",
+            "port": 5678,
+            "host": "localhost",
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}/images/processor",
+                    "remoteRoot": "/app"
+                }
+            ]
         }
     ]
 }

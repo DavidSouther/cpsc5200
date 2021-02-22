@@ -12,32 +12,29 @@ from common.wait import wait_for_tcp
 
 logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', level=logging.INFO, datefmt='%H:%M:%S')
 parser = argparse.ArgumentParser()
-parser.add_argument('--bus', type=str, default='bus')
-parser.add_argument('--queue', type=str, default='operations')
 parser.add_argument('--nas', type=str, default='/nas')
 (args, _) = parser.parse_known_args()
 
-_channel = None
 def listen():
-    global _channel
     callback = lambda ch, method, props, body: process(ch, method, props, body)
-    _channel = bus.listen(bus.COMMAND_QUEUE, callback)
-    logging.info('Listening for messages on %s. Exit with Ctrl+C', _channel)
+    bus.listen(bus.CONVERT_QUEUE, callback)
 
 def process(ch, method, props, body):
     body = body.decode('utf-8')
-    logging.info('On channel %s received %s', ch, body)
-    op(body)
     ch.basic_ack(delivery_tag=method.delivery_tag)
+    logging.info('Received command %s', body)
+    (photo_id, operation_id, prior_operation, operation, *arguments) = body.split(' ')
+    logging.info('')
+    try:
+        op(photo_id, operation_id, prior_operation, operation, *arguments)
+        bus.publish(bus.FINISHED_QUEUE, f'DONE {photo_id} {operation_id}')
+    except Exception as e:
+        logging.error(e)
     logging.info('Done with image')
 
-def op(body):
-    (photo_id, operation_id, prior_operation, operation, *arguments) = body.split(' ')
-    try:
-        arguments = convert_arguments(operation, arguments)
-    except:
-        logging.info('Failed to build arguments for %s', body)
-        return
+def op(photo_id, operation_id, prior_operation, operation, *arguments):
+    arguments = convert_arguments(operation, arguments)
+    logging.info('Performing %s on %s/%s with args %s', operation, photo_id, prior_operation, ' '.join(arguments or []))
     photo_path = Path(args.nas) / 'photos' / photo_id
     source = photo_path / f'{prior_operation}.png'
     target = photo_path / f'{operation_id}.png'
@@ -73,6 +70,7 @@ def convert_arguments(operation, args):
         return ['-resize', f'{x}x{y}']
     if operation == 'grayscale':
         return ['-grayscale']
+    return None
 
 def maybe(n):
     if len(n) > 0:
@@ -83,7 +81,7 @@ def maybe(n):
 @run_with_reloader
 def main():
     logging.info('Waiting for RabbitMQ')
-    wait_for_tcp(args.bus, '5672')
+    wait_for_tcp('bus', '5672')
     listen()
 
 if __name__ == '__main__':
