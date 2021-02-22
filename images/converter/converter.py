@@ -73,7 +73,7 @@ def convert_arguments(operation, args):
             y = x
         return ['-resize', f'{x}x{y}']
     if operation == 'grayscale':
-        return ['-grayscale']
+        return ['-colorspace', 'Gray']
     return None
 
 def maybe(n):
