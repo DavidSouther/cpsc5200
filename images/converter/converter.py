@@ -2,6 +2,8 @@
 
 import argparse
 import logging
+from time import sleep
+from random import random
 
 from pathlib import Path
 
@@ -40,6 +42,8 @@ def op(photo_id, operation_id, prior_operation, operation, *arguments):
     target = photo_path / f'{operation_id}.png'
     command = ['convert'] + arguments + [source, target]
     logging.info("Executing %s", command)
+
+    sleep(random() * 2)
 
 def convert_arguments(operation, args):
     """

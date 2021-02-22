@@ -48,24 +48,19 @@ class OperationsThread(Thread):
         self.ops = []
         logging.info('Processing queue length %d', len(ops))
         for op in ops:
-            operation_id = op.split(' ')[1]
+            (_, operation_id, previous_id, *_) = op.split(' ')
             operation = self.operation(operation_id)
-            if operation.completed is not None:
-                # It has been finished, remove it from ops
-                ops.remove(op)
             prior_operation = self.operation(operation.previous_id)
-            if operation.previous_id is None or prior_operation.completed is not None:
+            if previous_id == 'current' or prior_operation.completed is not None:
                 # Previous operation has been completed, so remove this one and
                 # schedule it
-                command = f'{operation.photo_id} {operation.id} {operation.previous_id} {operation.description}'
+                command = f'{operation.photo_id} {operation.id} {previous_id} {operation.description}'
                 logging.info('Sending task for conversion %s', command)
                 bus.basic_publish(self.channel, bus.CONVERT_QUEUE, command)
-                ops.remove(op)
-            else:
-                # The prior operation hasn't completed. Make sure it's in the
-                # list at all, and if not, add it back.
-                if not any(op.split(' ')[2] == str(prior_operation.id) for op in ops):
-                    ops.append(op)
+                try:
+                    ops.remove(op)
+                except:
+                    pass
         logging.info('Queue length after processing %d', len(ops))
         self.ops = ops + self.ops
     
