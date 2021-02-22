@@ -3,7 +3,8 @@ FROM python:3-alpine
 WORKDIR /app
 
 # Docker context is images/
-COPY ./common .
+COPY ./requirements.txt .
+COPY ./common ./common
 COPY ./api .
 
 RUN pip3 install -r requirements.txt

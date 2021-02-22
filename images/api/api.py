@@ -1,12 +1,13 @@
-
 import logging
 
-from flask import request
+from flask import Flask, request
+from werkzeug.serving import run_with_reloader
 
-from app import app
 from common import db
 import bus
 import photos
+
+app = Flask('photos_api')
 
 logging.basicConfig(level=logging.INFO)
 
@@ -45,6 +46,10 @@ def transform(id):
         results.append(f'/photos/{photo.id}/steps/{operation.id}')
     return '\n'.join(results)
 
-if __name__ == '__main__':
+@run_with_reloader
+def main():
     connect()
-    app.run(debug=True, host='0.0.0.0')
+    app.run(host='0.0.0.0')
+
+if __name__ == '__main__':
+    main()

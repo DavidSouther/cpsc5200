@@ -2,10 +2,13 @@
 
 import argparse
 import logging
-from pathlib import Path
-import pika
 
-from time import sleep
+from pathlib import Path
+
+from werkzeug.serving import run_with_reloader
+
+from common import bus
+from common.wait import wait_for_tcp
 
 logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', level=logging.INFO, datefmt='%H:%M:%S')
 parser = argparse.ArgumentParser()
@@ -18,19 +21,7 @@ _channel = None
 def listen():
     global _channel
     callback = lambda ch, method, props, body: process(ch, method, props, body)
-    started = False
-    while not started:
-        try:
-            params = pika.ConnectionParameters(args.host)
-            connection = pika.BlockingConnection(params)
-            _channel = connection.channel()
-            _channel.queue_declare(queue=args.queue, durable=True)
-            _channel.basic_qos(prefetch_count=1)
-            _channel.basic_consume(queue=args.queue, on_message_callback=callback)
-            _channel.start_consuming()
-            started = True
-        except pika.exceptions.AMQPConnectionError:
-            sleep(1)
+    _channel = bus.listen(bus.COMMAND_QUEUE, callback)
     logging.info('Listening for messages on %s. Exit with Ctrl+C', _channel)
 
 def process(ch, method, props, body):
@@ -89,6 +80,11 @@ def maybe(n):
     else:
         return None
 
-if __name__ == '__main__':
+@run_with_reloader
+def main():
     logging.info('Waiting for RabbitMQ')
+    wait_for_tcp(args.bus, '5672')
     listen()
+
+if __name__ == '__main__':
+    main()
