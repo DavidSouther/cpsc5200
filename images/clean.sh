@@ -3,4 +3,6 @@
 cd "$(dirname "$0")"
 rm -rf \
     ./nas/photos/* \
-    ./api/db/*
+    ./db/data
+
+mkdir ./db/data

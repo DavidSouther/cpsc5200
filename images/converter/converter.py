@@ -25,16 +25,16 @@ def listen():
     logging.info('Listening for messages on %s. Exit with Ctrl+C', _channel)
 
 def process(ch, method, props, body):
-    logging.info('On channel %s received %r', ch, body.decode())
+    body = body.decode('utf-8')
+    logging.info('On channel %s received %s', ch, body)
     op(body)
-    _channel.basic_ack(delivery_tag=method.delivery_tag)
+    ch.basic_ack(delivery_tag=method.delivery_tag)
     logging.info('Done with image')
 
-def op(self, body):
-    body = body.decode('utf-8')
+def op(body):
     (photo_id, operation_id, prior_operation, operation, *arguments) = body.split(' ')
     try:
-        arguments = self.convert_arguments(operation, arguments)
+        arguments = convert_arguments(operation, arguments)
     except:
         logging.info('Failed to build arguments for %s', body)
         return
