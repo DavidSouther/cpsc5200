@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import subprocess
 from time import sleep
 from random import random
 
@@ -29,7 +30,7 @@ def process(ch, method, props, body):
     logging.info('')
     try:
         op(photo_id, operation_id, prior_operation, operation, *arguments)
-        bus.publish(bus.FINISHED_QUEUE, f'DONE {photo_id} {operation_id}')
+        bus.publish(bus.FINISHED_QUEUE, f'DONE {operation_id}')
     except Exception as e:
         logging.error(e)
     logging.info('Done with image')
@@ -42,8 +43,7 @@ def op(photo_id, operation_id, prior_operation, operation, *arguments):
     target = photo_path / f'{operation_id}.png'
     command = ['convert'] + arguments + [source, target]
     logging.info("Executing %s", command)
-
-    sleep(random() * 2)
+    subprocess.run(command)
 
 def convert_arguments(operation, args):
     """
