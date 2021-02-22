@@ -22,6 +22,34 @@ The results of the photo transforms will be available for usage eg in an ML/Imag
 * File Store - high-volume NAS store, available to API & Image processors.
 * Image converters - Python (or shell) wrapper around image magic, to perform the processing of images stored on the NAS.
 
+[ditaa, components, png]
+....
+
++------+   +-------------+
+|Camera|<--|Configuration|
+|  {io}|   |  {d}        |
++------+   +-------------+
+  |
+  |
+  v
++---+ Operation +---------+
+|API|-=-------->|Processor|
++---+           +---------+
+ | |               |  | ^
+ | |   +-----------+  | |
+ | |   |       convert: :done
+ | v   v              v |
+ |+--------+      +----------+
+ ||Database|      |Converters|
+ |+     {s}+      +----------+
+ |+--------+        |
+ |                  |
+ |  +---+           |
+ +->|NAS|<----------+
+    |{s}|
+    +---+
+....
+
 === Connectors
 
 * Devices to API: HTTP, see details below.
@@ -37,29 +65,33 @@ The main API will provide a minimal resource API, with a specific RPC for execut
 Uploads will use multipart form data.
 Other RPC requests will use a simple flat POST body, with one command per line.
 
-----
-GET /photos -> [{id}] # List of photo IDs 
-GET /device/{device}/photos -> [{id}] # List of photos limited to a single device
-POST /photos device={device} file={photo} -> /photos/{id}  # Upload a photo, returns the generated ID
-GET /photos/{id}.png -> {photo}
-POST /photos/{id}:transform [op] -> [{opid}] # Queue a list of transformations to apply to the photo at {id}. Returns a list of {opid}s which will get filled with results.
-GET /photos/{id}/first.png -> {photo} # Return the original, raw photo posted.
-GET /photos/{id}/steps -> [{opid}] # Returns a list of opids which are either younger than 30 days, or are in use.
-GET /photos/{id}/steps/{opid}.png -> {photo} # Return the photo at {opid} transform. 
-POST /photos/{id}/steps/{opid}:rebase -> /photos/{id} # Move the photo step at {opid} to be the current photo in {id}, for get and future operations
+
+=== Resource API
+
+* `+GET /photos -> [{id}]+` List of photo IDs 
+* `+GET /device/{device}/photos -> [{id}]+` List of photos limited to a single device
+* `+POST /photos device={device} file={photo} -> /photos/{id}+` Upload a photo, returns the generated ID
+* `+GET /photos/{id}.png -> {photo}+` Download a single image. Photo must be an ID.
+* `+POST /photos/{id}:transform [op] -> [{opid}]+` Queue a list of transformations to apply to the photo at {id}. Returns a list of {opid}s which will get filled with results.
+* `+GET /photos/{id}/first.png -> {photo}+` Return the original, raw photo posted.
+* `+GET /photos/{id}/steps -> [{opid}]+` Returns a list of opids which are either younger than 30 days, or are in use.
+* `+GET /photos/{id}/steps/{opid}.png -> {photo}+` Return the photo at {opid} transform.
+* `+POST /photos/{id}/steps/{opid}:rebase -> /photos/{id}+` Move the photo step at {opid} to be the current photo in {id}, for get and future operations
 ----
 
-== API
+== Commands
 
 ----
-flip {axis} # vertical or horizontal
-rotate {degrees} # number degrees; positive = dextral, negative = sinistral; left = -90, right = 90
-crop {left}:{top}:{width}:{height} # Crop region of photo
-resize {x?}:{y?} # One of x or y must be specified. If both, sets size to both. If only one, keeps aspect ratio.
-thumbnail # Shorthand for resize larger size to 64
+* `+flip {axis}+` vertical or horizontal
+* `+rotate {degrees}+` number degrees; positive = dextral, negative = sinistral; left = -90, right = 90
+* `+crop {left}:{top}:{width}:{height}+` Crop region of photo
+* `+resize {x?}:{y?}+` One of x or y must be specified. If both, sets size to both. If only one, keeps aspect ratio.
+* `+thumbnail+` Shorthand for resize larger size to 64
 ----
 
 === API to convert mapping
+
+The above API converts directly to imagemagic color and geometry commands.
 
 ---
 flip horizontal -> -flop
@@ -67,7 +99,7 @@ flip vertical -> -flip
 rotate -> -rotate {d}
 crop l:t:w:h -> -crop {w}x{h}+{l}+{t}
 resize x?:y? -> -resize {x}x{y}
-grayscale -> -grayscale
+grayscale -> -color gray
 ---
 
 == Database
@@ -91,6 +123,8 @@ primary key (photo id, operation id)
 
 == Filesystem
 
+The NAS filesystem has a simple structure, storing all pngs in a folder with the photo's name, and using the opid as the image name. `+first+` is the original, unmodified, upload. `+current+` is a symlink to the most recently edited image.
+
 ----
 ROOT/
   photos/
@@ -102,8 +136,15 @@ ROOT/
 
 == Messages
 
+Messages sit on one of three channels.
+
+* `+operation+` queues operations for the Processor.
+* `+convert+` has operations that converters are safe to perform, that is, the operations will only be sent when the processor confirms the previous image is available.
+* `+finished+` takes the operation that the converter has just performed, and sends it to the processor to mark as complete.
+
+Operations have this format:
 ----
-photo_id opid last_opid operation
+photo_id opid last_opid operation argument
 ----
 
 == Backend
