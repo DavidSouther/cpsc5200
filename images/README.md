@@ -21,3 +21,39 @@ They should be included in the git checkout via their respective .gitignore file
 
 A demo of the cluster coming up and running the test script is available.
 https://youtu.be/NT0qyPTsCjo
+
+## 500 Lines or Less
+
+Python files:
+
+```
+~ find . -type f -name '*.py' | sort | xargs wc
+   60   144  1750 ./api/api.py
+   32    81   936 ./api/photos.py
+   71   152  1920 ./common/bus.py
+   60   167  2015 ./common/db.py
+   16    41   388 ./common/wait.py
+   91   281  2788 ./converter/converter.py
+   99   264  3277 ./processor/processor.py
+  429  1130 13074 total
+```
+
+And for completeness, the non-py files
+
+```
+~ find . -type f -not -name '*.py' | sort | xargs wc
+  19   64  441 ./api/Dockerfile
+   8   13  107 ./clean.sh
+  17   60  424 ./converter/Dockerfile
+  62   89 1165 ./docker-compose.yaml
+  17   60  424 ./processor/Dockerfile
+   8    9  148 ./requirements.txt
+   3    5   49 ./testing/data/boat/operations
+   3    5   49 ./testing/data/carseat/operations
+   3    5   48 ./testing/data/desk/operations
+   3    5   47 ./testing/data/floor/operations
+   3    5   46 ./testing/data/pillow/operations
+   3    5   48 ./testing/data/pond/operations
+  15   57  481 ./testing/data/test.sh
+ 164  382 3477 total
+```
