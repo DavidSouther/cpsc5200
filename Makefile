@@ -1,4 +1,4 @@
 all: pdf 
 
 pdf:
-	asciidoctor-pdf **/*.adoc
+	asciidoctor-pdf -r asciidoctor-diagram **/*.adoc

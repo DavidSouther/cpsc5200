@@ -14,17 +14,15 @@ The results of the photo transforms will be available for usage eg in an ML/Imag
 
 === Components
 
-* Camera devices - C or other proprietary API. Will be provided with a configuration including API server, necessary network information, frequency of photos, and calibration for what edit commands to dispatch.
-* API Server - Haskell or other high performance / low overhead web server. Implements the HTTP interface below, and monitors a message queue to track which operations have been completed.
-* Processor - Haskell or similar. Coordinates image converters running in appropriate workflow order.
-* Janitor - Periodically runs batch clean, removing completed but unused operation images older than "30" days.
+* Camera devices - Will be provided with a configuration including API server, necessary network information, frequency of photos, and calibration for what edit commands to dispatch.
+* API Server - Implements the HTTP interface below, and monitors a message queue to track which operations have been completed.
+* Processor - Coordinates image converters running in appropriate workflow order.
 * Metadata Store - SQL database. See schema below.
 * File Store - high-volume NAS store, available to API & Image processors.
-* Image converters - Python (or shell) wrapper around image magic, to perform the processing of images stored on the NAS.
+* Image converters - Wrapper around image magic, to perform the processing of images stored on the NAS.
 
 [ditaa, components, png]
 ....
-
 +------+   +-------------+
 |Camera|<--|Configuration|
 |  {io}|   |  {d}        |
@@ -32,15 +30,15 @@ The results of the photo transforms will be available for usage eg in an ML/Imag
   |
   |
   v
-+---+ Operation +---------+
++---+ operation +---------+
 |API|-=-------->|Processor|
 +---+           +---------+
  | |               |  | ^
  | |   +-----------+  | |
- | |   |       convert: :done
+ | |   |       convert: :finished
  | v   v              v |
  |+--------+      +----------+
- ||Database|      |Converters|
+ ||Metadata|      |Converters|
  |+     {s}+      +----------+
  |+--------+        |
  |                  |
@@ -48,6 +46,16 @@ The results of the photo transforms will be available for usage eg in an ML/Imag
  +->|NAS|<----------+
     |{s}|
     +---+
+....
+
+[ditaa, legend, png]
+....
++----------------------------+
+|Legend                      |
+| ++ Message bus channel  ++ |
+| ||-=------------------->|| |
+| ++                      ++ |
++----------------------------+
 ....
 
 === Connectors
@@ -77,32 +85,31 @@ Other RPC requests will use a simple flat POST body, with one command per line.
 * `+GET /photos/{id}/steps -> [{opid}]+` Returns a list of opids which are either younger than 30 days, or are in use.
 * `+GET /photos/{id}/steps/{opid}.png -> {photo}+` Return the photo at {opid} transform.
 * `+POST /photos/{id}/steps/{opid}:rebase -> /photos/{id}+` Move the photo step at {opid} to be the current photo in {id}, for get and future operations
-----
 
-== Commands
+=== Commands
 
-----
-* `+flip {axis}+` vertical or horizontal
+* `+flip {axis}+` axis is vertical or horizontal
 * `+rotate {degrees}+` number degrees; positive = dextral, negative = sinistral; left = -90, right = 90
-* `+crop {left}:{top}:{width}:{height}+` Crop region of photo
+* `+crop {left}:{top}:{width}:{height}+` Crop region of photo specifying the top-left corner and size of the crop region.
 * `+resize {x?}:{y?}+` One of x or y must be specified. If both, sets size to both. If only one, keeps aspect ratio.
 * `+thumbnail+` Shorthand for resize larger size to 64
-----
 
-=== API to convert mapping
+==== API to convert mapping
 
 The above API converts directly to imagemagic color and geometry commands.
 
----
+----
 flip horizontal -> -flop
 flip vertical -> -flip
 rotate -> -rotate {d}
 crop l:t:w:h -> -crop {w}x{h}+{l}+{t}
 resize x?:y? -> -resize {x}x{y}
 grayscale -> -color gray
----
+----
 
-== Database
+=== Database
+
+The database tracks which photos have been uploaded, and the operations that have been performed on them.
 
 ----
 Photo
@@ -121,7 +128,7 @@ Operation
 primary key (photo id, operation id)
 ----
 
-== Filesystem
+=== Filesystem
 
 The NAS filesystem has a simple structure, storing all pngs in a folder with the photo's name, and using the opid as the image name. `+first+` is the original, unmodified, upload. `+current+` is a symlink to the most recently edited image.
 
@@ -134,18 +141,15 @@ ROOT/
       {opid}.png
 ----
 
-== Messages
+=== Messages
 
-Messages sit on one of three channels.
+Messages send on one of three channels.
 
 * `+operation+` queues operations for the Processor.
 * `+convert+` has operations that converters are safe to perform, that is, the operations will only be sent when the processor confirms the previous image is available.
 * `+finished+` takes the operation that the converter has just performed, and sends it to the processor to mark as complete.
 
-Operations have this format:
-----
-photo_id opid last_opid operation argument
-----
+Operations have the format `+photo_id opid last_opid operation argument+`
 
 == Backend
 
@@ -159,6 +163,10 @@ Configurations are flat text files, with the operations listed in order, one per
 
 Primary security is an intranet system.
 Traffic and endpoints will be unsecured within the intranet.
-Operations may apply network level controls, etg internal firewalls based on device IP or Mac address, to limit communication with the API system.
-The NAS should be dedicated to the image processing system, in close proximity to the image processors, and able to handle 10Gb reads/writes per (minute?).
-This assumes \~1Mb images from the camera. 
+Operations may apply network level controls (eg internal firewalls based on device IP or Mac address) to limit communication with the API system.
+The NAS should be dedicated to the image processing system, in close proximity to the image processors, and able to handle 100Mb reads/writes per second.
+This assumes \~1Mb images from the camera.
+
+== Implementation
+
+Sample implementation is at https://github.com/DavidSouther/cpsc5200/images.
