@@ -11,15 +11,18 @@ app = Flask('photos_api')
 
 logging.basicConfig(level=logging.INFO)
 
+
 @app.before_first_request
 def connect():
     wait_for_tcp('db', '5432')
     db.migrate()
 
+
 @app.route('/photos', methods=['GET'])
 def list():
     photos = db.session().query(db.Photo).all()
     return '\n'.join([f'/photo/{photo.id}' for photo in photos])
+
 
 @app.route('/photos', methods=['POST'])
 def upload():
@@ -29,10 +32,12 @@ def upload():
     photos.write(id, request.files['file'])
     return f'/photos/{id}'
 
+
 def publish(message):
     if not 'channel' in g:
         g.channel = bus.make_channel(bus.make_connection())
     bus.basic_publish(g.channel, bus.COMMAND_QUEUE, message)
+
 
 @app.route('/photos/<int:id>:transform', methods=['POST'])
 def transform(id):
@@ -52,10 +57,12 @@ def transform(id):
         results.append(f'/photos/{photo.id}/steps/{operation.id}')
     return '\n'.join(results)
 
+
 @run_with_reloader
 def main():
     connect()
     app.run(host='0.0.0.0')
+
 
 if __name__ == '__main__':
     main()

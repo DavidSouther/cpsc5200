@@ -7,12 +7,15 @@ from sqlalchemy.orm import sessionmaker, relationship, scoped_session
 
 parser = ArgumentParser()
 #parser.add_argument('--database', type=str, default='sqlite:////var/db/test.db')
-parser.add_argument('--database', type=str, default='postgresql://postgres:example@db:5432/postgres')
+parser.add_argument('--database', type=str,
+                    default='postgresql://postgres:example@db:5432/postgres')
 (args, _) = parser.parse_known_args()
 
 
 Base = declarative_base()
 _engine = None
+
+
 def engine():
     global _engine
     if _engine is None:
@@ -20,29 +23,35 @@ def engine():
         _engine = create_engine(args.database, echo=False)
     return _engine
 
+
 Session = scoped_session(sessionmaker(bind=engine()))
+
 
 def session():
     if not 'session' in g:
         g.session = Session()
     return g.session
 
+
 def migrate():
     global Base
     Base.metadata.create_all(engine())
+
 
 class Photo(Base):
     __tablename__ = 'photos'
 
     id = Column(Integer, Sequence('photo_id_seq'), primary_key=True)
-    device = Column(String) # Arbitrary string
-    latest_operation = Column(Integer) # Incrementing integer, foreign key to Operations
+    device = Column(String)  # Arbitrary string
+    # Incrementing integer, foreign key to Operations
+    latest_operation = Column(Integer)
 
     def __repr__(self):
         return f"<Photo(id={self.id}, " \
-                       "device='{self.device}', " \
-                       "created='{self.created}', " \
-                       "latest_operation={self.latest_operation})>"
+            "device='{self.device}', " \
+            "created='{self.created}', " \
+            "latest_operation={self.latest_operation})>"
+
 
 class Operation(Base):
     __tablename__ = 'operations'
@@ -51,7 +60,7 @@ class Operation(Base):
     photo_id = Column(Integer, ForeignKey('photos.id'))
     previous_id = Column(Integer, ForeignKey('operations.id'))
     completed = Column(String)
-    description = Column(String) # JSON of original command
+    description = Column(String)  # JSON of original command
 
     photo = relationship("Photo")
     previous = relationship("Operation")

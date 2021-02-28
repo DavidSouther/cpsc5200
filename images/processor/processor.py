@@ -9,6 +9,8 @@ from common.wait import wait_for_tcp
 
 
 _operations = None
+
+
 def operations():
     global _operations
     if _operations is not None \
@@ -28,7 +30,7 @@ class OperationsThread(Thread):
         self.ops = []
         self.channel = None
         self.session = None
-    
+
     def run(self):
         wait_for_tcp('db', '5432')
         wait_for_tcp('bus', '5672')
@@ -42,7 +44,7 @@ class OperationsThread(Thread):
         # The internet thinks this is thread safe
         logging.info('Adding %s', op)
         self.ops.append(op)
-    
+
     def process_ops(self):
         ops = self.ops[:]
         self.ops = []
@@ -63,9 +65,10 @@ class OperationsThread(Thread):
                     pass
         logging.info('Queue length after processing %d', len(ops))
         self.ops = ops + self.ops
-    
+
     def operation(self, id):
-        return self.session.query(db.Operation).filter(db.Operation.id==id).first()
+        return self.session.query(db.Operation).filter(db.Operation.id == id).first()
+
 
 def handle_operation(ch, method, props, body):
     global operations_thread
@@ -75,6 +78,7 @@ def handle_operation(ch, method, props, body):
     operations().add_op(body)
     logging.info('Queued for conversion')
 
+
 def finished_operation(ch, method, props, body):
     body = body.decode('utf-8')
     logging.info('Received %s', body)
@@ -83,12 +87,15 @@ def finished_operation(ch, method, props, body):
     finish(operation_id)
     logging.info('Marked image finished')
 
+
 def finish(operation_id):
     session = db.Session()
-    operation = session.query(db.Operation).filter(db.Operation.id==operation_id).first()
+    operation = session.query(db.Operation).filter(
+        db.Operation.id == operation_id).first()
     operation.completed = datetime.now().isoformat()
     session.add(operation)
     session.commit()
+
 
 @run_with_reloader
 def main():
