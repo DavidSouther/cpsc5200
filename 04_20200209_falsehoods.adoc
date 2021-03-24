@@ -1,0 +1,6 @@
+= Falsehoods
+
+Most dangerous (outage causing) falsehoods from http://slinkp.com/falsehoods-programmers-believe-about-apis.html
+
+* If the documentation says that legal values for POSTing to resource B can be found by GET to resource A, then all returned values from A will work with B.
+* An API that is documented as returning errors in JSON format will always return a parseable JSON error response.

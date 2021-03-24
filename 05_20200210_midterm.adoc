@@ -1,0 +1,94 @@
+= Midterm
+
+David Souther <dsouther@seattleu.edu>
+2020-02-10 Midterm
+
+== 1. Boxes and Lines
+
+____
+We can define a software architecture model as a collection of boxes and lines.
+But, if we do this we need to give semantics to those boxes and lines.
+What do they generally represent?
+(Hint: they do not represent services, or data access layers, or clients).
+____
+
+In software architecture designs, the boxes and lines on a diagram represent components and connectors.
+Loosely, components are abstract things, while connectors are abstract relationships between things.
+In UML OOP diagrams, components are classes and connectors are (one or more) pointers.
+Service-oriented architectures use components as services, and connectors as (one or bundles of) RPC invocation.
+Stepping out of field, I would be willing (in a longer paper) to defend the argument that Category Theory is an architecture, with sets as the components and functions as the connectors.
+In general, the semantics of the boxes and lines in an architectural model are the things the architecture cares about, and how those things relate to one another.
+
+== 2. Agile & Architecture
+
+____
+Is software architecture, and by extension the role of the software architect, compatible with Agile processes?
+In what ways might it be or not be compatible?
+____
+
+The compatibility of architecture and agile depend on how militant a practitioner of either enforces the capital A on their respective side.
+An architect's goal is to develop and share a holistic understanding of the solution being developed.
+Agilistas (of the Manifesto variety) prioritize delivering iterative value to the customer, rapidly.
+These are orthogonal goals.
+A good agile architect can deliver ongoing iterative value by growing the shared understanding of the solution space continuously through the project lifecycle.
+Successful agile projects will iterate rapidly on refining requirements in their initial cycles, and should build that architectural understanding through those early iterations to guide later development.
+
+== 3. REST Inception
+____
+In his 2000 Ph.D thesis, Roy Fielding argues that REST is a logical evolution of existing architectural styles.
+How does he "create" the REST architectural style from seemingly nothing?
+____
+
+Dr. Fielding cheated.
+He looked around five years after the fact and described the architectural pieces which the field had successfully combined, while ignoring the failures on the roadside.
+He has some passing references to CORBA and SOAP, but at no time gives deep consideration to their detriments.
+There is no case study on why FTP failed to scale as a foundation of the Internet.
+Instead, Dr. Fielding retroactively finds the pieces of architecture that effectively built together in HTTP.
+This is a very useful exercise.
+Documenting systems and design decisions after the fact is common in the industry.
+It is very useful to future practitioners to look back and see what was successful, and why the contributors think it was successful.
+
+== 4. GoF Criticisms
+
+____
+A number of criticisms have been leveled against design patterns as described in the Gang of Four book.
+One of these relates to the applicability of design patterns to application domain problems.
+Discuss.
+____
+
+Similar to Dr. Fielding, the Gang of Four did not write about the development of applications that meet domain needs.
+They instead look around at a number of systems which solve a range of problems across many domains, and documented the commonalities they found.
+To use another of my construction metaphors, criticizing GoF for not discussing application patterns is equivalent to complaining that a book describing joinery techniques doesn't talk about tables.
+Being unable to extrapolate a pattern to a specific application and domain is a failing of the imagination of the critic.
+
+
+== 5. Levels of Patterns
+
+____
+We can talk about patterns in levels or layers, and those patterns apply to everything we do.
+What are the levels of patterns, can they be differentiated, and what happens to members of those levels over time?
+____
+
+Differentiating levels of patterns is a focused way to say "architectures have abstractions."
+As a system grows in scope, different shareholders will require different understandings of the system at varying levels of granularity.
+At the C-suite level, the system doesn't exist - this level has a problem statement, north-star requirement, killer feature, or similar.
+Moving to the director level, the architecture begins to emerge as areas of the system that require certain specializations to deliver.
+At a middling granularity, technical layers begin describing big pieces of the system, and transition from purely domain language to including technical details that are unique to the solution.
+As teams and developers become involved, the understanding of the system moves along this scale to include ever increasing technical detail.
+This will eventually cross the line from discussing domain requirements, to project specific pieces of those requirements, to eventually deciding the memory interface between classes.
+
+== 6. Correctness
+
+____
+There are two correctness measures that we can apply to a software architecture.
+What are they and why do they apply?
+____
+
+An architecture is correct if the solution delivers the requirements of the solution, and it is capable of meeting changing requirements over an appropriate time frame.
+These are the functional requirements (does it deliver the right thing the first time) and the nonfunctional requirements (will it keep delivering the right thing as time goes on).
+Both being measurable, with effort architectures can then be graded in their appropriateness for a particular problem.
+In practice, this results in so-called "Design Documents" - descriptions of design decisions, their pros and cons, and alternatives considered.
+This technique is instrumental to being a good software architect.
+Design Docs and similar artifacts are cheap ways to test a proposed model.
+The collection of Design Docs provide a trail to re-evaluate decisions, and understand both which consequences were and were not anticipated.
+Examining an architecture with these lenses gives practitioners a concrete approach to representing their benefits to a team and project.
