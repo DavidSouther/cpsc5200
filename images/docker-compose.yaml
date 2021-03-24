@@ -1,8 +1,63 @@
-services:
-  api:
-    build: ./api/
-    ports:
-      - "3000":"3000"
-    volumes:
-      - ./api/:/opt/api
+version: "3"
 
+services:
+  bus:
+    image: rabbitmq:3-management
+    hostname: bus
+    volumes:
+      - ./bus/data:/var/lib/rabbitmq/mnesia/rabbit@my-rabbit
+      - ./bus/logs:/var/log/rabbitmq/log
+    ports:
+      - 15672:15672
+
+  db:
+    image: postgres:13-alpine
+    hostname: db
+    volumes:
+      - ./db/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: example
+
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080
+
+  converter_a:
+    build:
+      context: .
+      dockerfile: ./converter/Dockerfile
+    volumes:
+      - ./converter:/app
+      - ./common:/app/common
+      - ./nas:/nas
+
+  converter_b:
+    build:
+      context: .
+      dockerfile: ./converter/Dockerfile
+    volumes:
+      - ./converter:/app
+      - ./common:/app/common
+      - ./nas:/nas
+
+  processor:
+    build:
+      context: .
+      dockerfile: ./processor/Dockerfile
+    volumes:
+      - ./processor:/app
+      - ./common:/app/common
+    ports:
+      - 5678:5678
+
+  api:
+    build:
+      context: .
+      dockerfile: ./api/Dockerfile
+    volumes:
+      - ./api:/app
+      - ./common:/app/common
+      - ./nas:/nas
+    ports:
+      - 5000:5000

@@ -1,0 +1,6 @@
+{
+    "compilerOptions": {
+        "lib": ["ES2017"]
+    },
+    "files": ["07_final_treesql.ts"]
+}

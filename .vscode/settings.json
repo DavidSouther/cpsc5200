@@ -1,5 +1,6 @@
 {
     "cSpell.enableFiletypes": [
         "plaintext"
-    ]
+    ],
+    "python.pythonPath": "images/venv/bin/python"
 }
